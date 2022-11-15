@@ -84,10 +84,11 @@ void readTemp(void * pvParameters) {
 /*
  * PROTOCOL:
  * Data are read from the serial bluetooth channel as a stream of bytes.
- * Packets are of length 256 bytes.
+ * Packets can have max length of 256 bytes.
  * The first byte determines the type of the operation.
  * The second, third and fourth bytes determines the identifier to operate on.
  * The remaining 252 bytes determines the payload.
+ * Packets ends with CRLF.
  * 
  * Read operations:
  * Packets starts with R followed by an identifier.
@@ -101,23 +102,44 @@ void readTemp(void * pvParameters) {
  */
 int bufferSize = 256;
 char buffer[256]; // Buffer to store the incoming packet.
-bool waitForRead = false; // Flag to determine if the buffer is ready to be read.
-void readInboundBT(void * parameters) {
+bool bufferReady = false; // Flag to determine if the buffer is ready to be read.
+void readInboundBT(void * parameters) {  
   for (;;) {
-    if (waitForRead == true) {
+    while (!SerialBT.hasClient()) {
+      Serial.println("readInboundBT(): Waiting for BT client to connect.");  
+      delay(250);
+    }
+    
+    if (bufferReady == true) {
+      Serial.println("readInboundBT(): Buffer ready to be read.");
+      delay(250);
       continue;
     }
       
-    for (int i = 0; i < bufferSize; i++) {
+    for (int i = 0; i < bufferSize; i++) {      
+      if (!SerialBT.connected()) {
+        Serial.println("readInboundBT(): Client disconnected. Flushing buffer.");
+        break;
+      }
+      while(SerialBT.connected() && !SerialBT.available()) {
+        Serial.println("readInboundBT(): Waiting for inbound data.");
+        delay(250); // Wait for for inbound data.
+      }
+      
       if (SerialBT.available()) {
         char incomingChar = SerialBT.read();
+        //Serial.println("readInboundBT(): Received '" + String(incomingChar) + "'");
+        Serial.println("readInboundBT(): Received '" + String(byte(incomingChar)) + "'");
         buffer[i] = incomingChar;
       }
 
-      if (i == bufferSize-1) {
-        waitForRead = true;
+      // Buffer is ready to be read if its full or carriage return (CR) line feed (LF) is detected.
+      bool crlf = byte(buffer[i-1]) == 13 && byte(buffer[i]) == 10;
+      if (crlf || i == bufferSize-1) {
+        bufferReady = true;
+        break;
       } else {
-        waitForRead = false;
+        bufferReady = false;
       }
     }
   }
