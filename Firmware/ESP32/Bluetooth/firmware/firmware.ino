@@ -18,7 +18,7 @@ int relayPin = 16;
 int thermoDO = 19;
 int thermoCS = 23;
 int thermoCLK = 5;
-//MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
 
 // Duty cycle is a value in the range [0, 100]%.
 // Duty cycle of 0% means that the heater is off at all times.
@@ -28,10 +28,10 @@ int thermoCLK = 5;
 float _dutyCycle = 0;
 
 // The current temperature of the heat chamber.
-float currentTemp = 0;
+float _currentTemp = 0;
 
 // Thread that handles the temperature reading.
-//TaskHandle_t temperatureSensor_t;
+TaskHandle_t temperatureSensor_t;
 
 // Thread that handles the inbound bluetooth serial data.
 TaskHandle_t inboundBluetooth_t;
@@ -46,14 +46,14 @@ void setup() {
   pinMode(relayPin, OUTPUT);
   bootTime = millis();
 
-//  xTaskCreatePinnedToCore(
-//      readTemp, /* Function to implement the task */
-//      "TemperatureSensor", /* Name of the task */
-//      10000,  /* Stack size in words */
-//      NULL,  /* Task input parameter */
-//      0,  /* Priority of the task */
-//      &temperatureSensor_t,  /* Task handle. */
-//      0); /* Core where the task should run */
+  xTaskCreatePinnedToCore(
+      readTemp, /* Function to implement the task */
+      "TemperatureSensor", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &temperatureSensor_t,  /* Task handle. */
+      0); /* Core where the task should run */
 
  xTaskCreatePinnedToCore(
       readInboundBT, /* Function to implement the task */
@@ -86,10 +86,10 @@ void readTemp(void * pvParameters) {
     float temperatureC = 0;
     int numReadings = 10;
     for (int i = 0; i < numReadings; i++) {
-//      temperatureC += thermocouple.readCelsius();
+      temperatureC += thermocouple.readCelsius();
     }
   
-    currentTemp = temperatureC / numReadings;
+    _currentTemp = temperatureC / numReadings;
   }
 }
 
@@ -169,18 +169,24 @@ void dispatchInboundBT(void * parameters) {
   
       if (msg.startsWith("R001temperature")) {
         // Write the temperature to the BT.
-        String temperature = String(currentTemp);
-        for (int i = 0; i < temperature.length(); i++) {
-          SerialBT.write(temperature.charAt(i));
-        }
+        String temperature = String(_currentTemp);
+        sendStringBT(temperature);
         
       } else if (msg.startsWith("W002dutycycle")) {
         int index = 13; // Index where duty cycle value begins.
         String dutyCycle = msg.substring(index, msg.length());
         _dutyCycle = dutyCycle.toInt();
-        Serial.println(String(_dutyCycle));
+        String response = String(_dutyCycle);
+        sendStringBT(response);
+        Serial.println("Setting duty cycle: " + String(_dutyCycle));
       }
     }
+  }
+}
+
+void sendStringBT(String str) {
+  for (int i = 0; i < str.length(); i++) {
+    SerialBT.write(str.charAt(i));
   }
 }
 
