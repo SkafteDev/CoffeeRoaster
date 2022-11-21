@@ -40,8 +40,6 @@ public class ESP32Roaster implements ICoffeeRoaster {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        this.pollingThread = createPollingThread();
     }
 
     private Thread createPollingThread() {
@@ -79,7 +77,8 @@ public class ESP32Roaster implements ICoffeeRoaster {
                 btSocket.connect();
                 inputStream = btSocket.getInputStream();
                 outputStream = btSocket.getOutputStream();
-                this.pollingThread.start();
+                pollingThread = createPollingThread();
+                pollingThread.start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -91,6 +90,7 @@ public class ESP32Roaster implements ICoffeeRoaster {
     public boolean disconnect() {
         try {
             btSocket.close();
+            pollingThread.interrupt();
         } catch (IOException e) {
             e.printStackTrace();
         }

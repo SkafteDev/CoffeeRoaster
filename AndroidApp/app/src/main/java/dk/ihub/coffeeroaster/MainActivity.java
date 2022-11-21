@@ -20,6 +20,7 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import dk.ihub.coffeeroaster.devices.ESP32Roaster;
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
 import dk.ihub.coffeeroaster.devices.ICoffeeRoaster;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         initChart();
         initButtons();
 
-        this.roaster = new RoasterEmulator();
+        this.roaster = new ESP32Roaster();
         this.roaster.subscribe(this);
     }
 
