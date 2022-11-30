@@ -1,10 +1,10 @@
 #include "max6675.h"
 #include "BluetoothSerial.h"
 #include "Roaster.pb.h"
-#include "pb_common.h"
-#include "pb.h"
-#include "pb_encode.h"
-#include "pb_decode.h"
+#include "nanopb/pb_common.h"
+#include "nanopb/pb.h"
+#include "nanopb/pb_encode.h"
+#include "nanopb/pb_decode.h"
 #include "cobs.c"
 // Check if bluetooth configs are enabled.
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -172,7 +172,17 @@ void dispatchInboundBT(void * parameters) {
       convertToArr(_buffer, encoded); // Convert the packet buffer to a static array.
       cobsDecode(encoded, _buffer.size(), decoded); // COBS decoding.
       flushBuffer(); // Flush packet buffer.
-  
+      
+      // TODO: Implement protobuffer decoding.
+      pb_istream_t istream;
+      istream = pb_istream_from_buffer(decoded, sizeof(decoded));
+      SensorResponse decoded_proto = SensorResponse_init_zero;
+      pb_decode(&istream, SensorResponse_fields, &decoded_proto);
+      Serial.println("Decoded protobuffer message:");
+      Serial.println(decoded_proto.sensor_id);
+      Serial.println(decoded_proto.sensor_value);
+
+      String msg = "";
       if (msg.startsWith("R001temperature")) {
         // Write the temperature to the BT.
         String temperature = String(_currentTemp);
