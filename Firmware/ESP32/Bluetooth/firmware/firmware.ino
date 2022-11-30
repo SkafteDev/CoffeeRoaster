@@ -1,5 +1,11 @@
 #include "max6675.h"
 #include "BluetoothSerial.h"
+#include "Roaster.pb.h"
+#include "pb_common.h"
+#include "pb.h"
+#include "pb_encode.h"
+#include "pb_decode.h"
+#include "cobs.c"
 // Check if bluetooth configs are enabled.
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -97,25 +103,15 @@ void readTemp(void * pvParameters) {
  * PROTOCOL:
  * Data are read from the serial bluetooth channel as a stream of bytes.
  * Packets can have max length of 256 bytes.
- * The first byte determines the type of the operation.
- * The second, third and fourth bytes determines the identifier to operate on.
- * The remaining 252 bytes determines the payload.
- * Packets ends with CRLF.
- * 
- * Read operations:
- * Packets starts with R followed by an identifier.
- * Example...
- * [R001] translates to READ identifier 001. No payload is specified.
- * 
- * Write operations:
- * Packets starts with W followed by an identifier.
- * Example...
- * [W001VALUE] translates to WRITE identifier 001 with the payload VALUE.
- */
+ * Packets are encoded with COBS (Consistent Overhead Byte Stuffing).
+ * Packets are delimited by 00.
+ *
+*/
 int _bufferSize = 256;
-std::vector<char> _buffer; // Buffer to store the incoming packet.
+uint8_t _packetDelimiter = 0;
+std::vector<uint8_t> _buffer; // Buffer to store the incoming packet.
 bool _bufferReady = false; // Flag to determine if the buffer is ready to be read.
-void readInboundBT(void * parameters) {  
+void readInboundBT(void * parameters) {
   for (;;) {
     while (!SerialBT.hasClient()) {
       Serial.println("readInboundBT(): Waiting for BT client to connect.");  
@@ -127,8 +123,8 @@ void readInboundBT(void * parameters) {
       delay(250);
       continue;
     }
-      
-    for (int i = 0; i < _bufferSize; i++) {      
+
+    while (_buffer.size() < _bufferSize && !checkPacketDelimiter(_buffer, _packetDelimiter)) {      
       if (!SerialBT.connected()) {
         Serial.println("readInboundBT(): Client disconnected. Flushing buffer.");
         _buffer.clear();
@@ -140,21 +136,27 @@ void readInboundBT(void * parameters) {
       }
       
       if (SerialBT.available()) {
-        char incomingChar = SerialBT.read();
-        Serial.println("readInboundBT(): Received '" + String(byte(incomingChar)) + "'");
+        uint8_t incomingChar = SerialBT.read();
+        Serial.print("readInboundBT(): Received ");
+        Serial.println(incomingChar, HEX);
         _buffer.push_back(incomingChar);
       }
+    }
 
-      // Buffer is ready to be read if its full or carriage return (CR) line feed (LF) is detected.
-      bool crlf = (i-1 == -1) ? false : byte(_buffer.at(i-1)) == 13 && byte(_buffer.at(i)) == 10;
-      if (crlf || i == _bufferSize-1) {
-        _bufferReady = true;
-        break;
-      } else {
-        _bufferReady = false;
-      }
+    // Discard packet if packet size is too large and not delimited.
+    if (_buffer.size() == _bufferSize && !checkPacketDelimiter(_buffer, _packetDelimiter)) {
+      _buffer.clear(); // Discard packet.
+      _bufferReady = false;
+      Serial.println("readInboundBT(): Packet invalid. Discarded.");
+    } else {
+      _bufferReady = true; // Buffer is valid.
+      Serial.println("readInboundBT(): Packet ready for dispatch.");
     }
   }
+}
+
+bool checkPacketDelimiter(std::vector<uint8_t> buffer, uint8_t delimiter) {
+  return buffer.size() < 1 ? false : _buffer.at(buffer.size()-1) == 0;
 }
 
 void dispatchInboundBT(void * parameters) {
@@ -164,8 +166,12 @@ void dispatchInboundBT(void * parameters) {
     }
     
     if (_bufferReady) {
-      String msg = parseBuffer(_buffer);
-      flushBuffer();
+      // Apply COBS decoding on the packet buffer.
+      uint8_t encoded[_buffer.size()];
+      uint8_t decoded[sizeof(encoded)-2]; // Decoded COBS packet is 2 bytes shorter than the encoded COBS message.
+      convertToArr(_buffer, encoded); // Convert the packet buffer to a static array.
+      cobsDecode(encoded, _buffer.size(), decoded); // COBS decoding.
+      flushBuffer(); // Flush packet buffer.
   
       if (msg.startsWith("R001temperature")) {
         // Write the temperature to the BT.
@@ -184,16 +190,31 @@ void dispatchInboundBT(void * parameters) {
   }
 }
 
+void convertToArr(std::vector<uint8_t> vec, uint8_t *out) {  
+  for (int i = 0; i < vec.size(); i++) {
+    out[i] = vec.at(i);
+  }
+}
+
 void sendStringBT(String str) {
   for (int i = 0; i < str.length(); i++) {
     SerialBT.write(str.charAt(i));
   }
 }
 
-String parseBuffer(std::vector<char> buffer) {
+String parseBuffer(std::vector<uint8_t> buffer) {
   String out = "";
   for (int i = 0; i < buffer.size(); i++) {
     out = out + buffer.at(i);
+  }
+  return out;
+}
+
+String parseBuffer2(uint8_t *buffer, int size) {
+  String out = "";
+  for (int i = 0; i < size; i++) {
+    out = out + "|" + buffer[i];
+    Serial.println(buffer[i], HEX);
   }
   return out;
 }
