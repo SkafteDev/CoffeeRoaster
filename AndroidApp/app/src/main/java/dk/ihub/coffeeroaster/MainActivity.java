@@ -99,21 +99,21 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         xAxis.setDrawAxisLine(false);
 
         // Init left y-axis
-        YAxis leftAxis = lineChart.getAxisLeft();
-        leftAxis.setTextColor(Color.RED);
-        leftAxis.setAxisMaximum(230f);
-        leftAxis.setAxisMinimum(0f);
-        leftAxis.setDrawGridLines(true);
-        leftAxis.setGranularityEnabled(true);
+        YAxis rightAxis = lineChart.getAxisRight();
+        rightAxis.setTextColor(Color.RED);
+        rightAxis.setAxisMaximum(230f);
+        rightAxis.setAxisMinimum(0f);
+        rightAxis.setDrawGridLines(true);
+        rightAxis.setGranularityEnabled(true);
 
         // Init right y-axis
-        YAxis rightAxis = lineChart.getAxisRight();
-        rightAxis.setTextColor(Color.BLUE);
-        rightAxis.setAxisMaximum(100);
-        rightAxis.setAxisMinimum(0);
-        rightAxis.setDrawGridLines(false);
-        rightAxis.setDrawZeroLine(false);
-        rightAxis.setGranularityEnabled(false);
+        YAxis leftAxis = lineChart.getAxisLeft();
+        leftAxis.setTextColor(Color.BLUE);
+        leftAxis.setAxisMaximum(100);
+        leftAxis.setAxisMinimum(0);
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setDrawZeroLine(false);
+        leftAxis.setGranularityEnabled(false);
 
         // Make linechart update in real-time
         LineData data = new LineData();
