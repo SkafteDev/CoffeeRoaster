@@ -11,6 +11,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
     private SeekBar dutyCycle;
     private Switch switchConnected;
     private ToggleButton tglTimer;
+    private TextView lblDutyCycleVal;
+    private TextView lblTemperatureVal;
     private Button btnClear;
     private ICoffeeRoaster roaster;
 
@@ -59,8 +62,12 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         this.switchConnected = findViewById(R.id.switchConnect);
         this.switchConnected.setOnCheckedChangeListener(this);
 
+        this.lblDutyCycleVal = findViewById(R.id.lblDutyCycleVal);
+        this.lblTemperatureVal = findViewById(R.id.lblTemperatureVal);
+
         this.tglTimer = findViewById(R.id.tglTimer);
         this.tglTimer.setEnabled(false);
+        this.tglTimer.setVisibility(TextView.INVISIBLE);
 
         this.btnClear = findViewById(R.id.btnClear);
         this.btnClear.setOnClickListener((listener) -> {
@@ -162,6 +169,9 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         Log.d("MainActivity", String.format("Received event: %f [C]", event.getBeanTemperatureCelsius()));
         float t = event.getBeanTemperatureCelsius();
         float d = event.getDutyCycle();
+
+        lblTemperatureVal.setText(String.format("%s C", String.valueOf(t)));
+        lblDutyCycleVal.setText(String.valueOf(d));
 
         LineData data = lineChart.getData();
         ILineDataSet temperatureSet = data.getDataSetByIndex(0);

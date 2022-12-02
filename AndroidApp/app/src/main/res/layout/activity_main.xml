@@ -18,7 +18,7 @@
         app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/lblDutyCycle"
+        android:id="@+id/lblDutyCycleSlider"
         android:layout_width="wrap_content"
         android:layout_height="19dp"
         android:text="Heater duty cycle [%]:"
@@ -29,36 +29,19 @@
         app:layout_constraintTop_toBottomOf="@+id/lineChart"
         app:layout_constraintVertical_bias="0.089" />
 
-    <TextView
-        android:id="@+id/lblTimerStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginStart="16dp"
-        android:text="mm:ss"
-        app:layout_constraintStart_toEndOf="@+id/lblTimer"
-        app:layout_constraintTop_toTopOf="@+id/lblTimer" />
-
-    <TextView
-        android:id="@+id/lblTimer"
-        android:layout_width="wrap_content"
-        android:layout_height="19dp"
-        android:layout_marginStart="296dp"
-        android:layout_marginTop="80dp"
-        android:text="Timer:"
-        app:layout_constraintStart_toStartOf="@+id/switchConnect"
-        app:layout_constraintTop_toBottomOf="@+id/switchConnect" />
-
     <SeekBar
         android:id="@+id/seekBarDutyCycle"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="250dp"
         android:layout_height="42dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
         android:max="100"
         android:progress="1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.348"
-        app:layout_constraintStart_toEndOf="@+id/lblDutyCycle"
+        app:layout_constraintStart_toEndOf="@+id/lblDutyCycleSlider"
         app:layout_constraintTop_toBottomOf="@+id/lineChart" />
 
     <View
@@ -81,7 +64,8 @@
         android:textOff="Start"
         android:textOn="Stop"
         app:layout_constraintStart_toEndOf="@+id/btnClear"
-        app:layout_constraintTop_toBottomOf="@+id/switchConnect" />
+        app:layout_constraintTop_toBottomOf="@+id/switchConnect"
+        tools:visibility="visible" />
 
     <Switch
         android:id="@+id/switchConnect"
@@ -90,7 +74,7 @@
         android:layout_marginTop="16dp"
         android:text="Disconnected"
         android:textColor="?android:attr/textColorSecondary"
-        app:layout_constraintStart_toStartOf="@+id/lblDutyCycle"
+        app:layout_constraintStart_toStartOf="@+id/lblDutyCycleSlider"
         app:layout_constraintTop_toBottomOf="@+id/divider2" />
 
     <Button
@@ -100,5 +84,41 @@
         android:text="Clear"
         app:layout_constraintStart_toStartOf="@+id/switchConnect"
         app:layout_constraintTop_toTopOf="@+id/tglTimer" />
+
+    <TextView
+        android:id="@+id/lblDutyCycle"
+        android:layout_width="83dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:text="Duty cycle:"
+        app:layout_constraintStart_toEndOf="@+id/switchConnect"
+        app:layout_constraintTop_toTopOf="@+id/switchConnect" />
+
+    <TextView
+        android:id="@+id/lblDutyCycleVal"
+        android:layout_width="83dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:text="0"
+        app:layout_constraintStart_toEndOf="@+id/lblDutyCycle"
+        app:layout_constraintTop_toTopOf="@+id/lblDutyCycle" />
+
+    <TextView
+        android:id="@+id/lblTemperatureVal"
+        android:layout_width="83dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:text="0"
+        app:layout_constraintStart_toEndOf="@+id/lblTemperature"
+        app:layout_constraintTop_toTopOf="@+id/lblTemperature" />
+
+    <TextView
+        android:id="@+id/lblTemperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Temperature:"
+        app:layout_constraintStart_toStartOf="@+id/lblDutyCycle"
+        app:layout_constraintTop_toBottomOf="@+id/lblDutyCycle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
