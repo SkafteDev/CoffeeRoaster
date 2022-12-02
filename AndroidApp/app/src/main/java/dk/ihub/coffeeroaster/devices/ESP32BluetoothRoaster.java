@@ -149,27 +149,27 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
     @Override
     @SuppressLint("MissingPermission")
     public float getBeanTemperatureCelsius() {
-        if (btGatt == null) return 0;
+        if (btGatt == null) return temperatureC;
 
         BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
         if (btGatt.readCharacteristic(characteristic)) {
             return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         }
 
-        return -1;
+        return temperatureC; // return latest received value if characteristic read fails.
     }
 
     @Override
     @SuppressLint("MissingPermission")
     public float getDutyCycle() {
-        if (btGatt == null) return -1;
+        if (btGatt == null) return dutyCycle;
 
         BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(DUTY_CYCLE_CHARACTERISTIC_UUID);
         if (btGatt.readCharacteristic(characteristic)) {
             return Float.parseFloat(characteristic.getStringValue(0));
         }
 
-        return -1;
+        return dutyCycle; // return latest received value if characteristic read fails.
     }
 
     @Override
