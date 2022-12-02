@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -20,13 +22,14 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
-import dk.ihub.coffeeroaster.devices.ESP32Roaster;
+import dk.ihub.coffeeroaster.devices.ESP32BluetoothRoaster;
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
 import dk.ihub.coffeeroaster.devices.ICoffeeRoaster;
+import dk.ihub.coffeeroaster.events.ConnectionEvent;
+import dk.ihub.coffeeroaster.events.ICoffeeRoasterConnectionListener;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
-import dk.ihub.coffeeroaster.devices.RoasterEmulator;
 
-public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEventListener, SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEventListener, ICoffeeRoasterConnectionListener, SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener {
 
     private LineChart lineChart;
     private SeekBar dutyCycle;
@@ -43,7 +46,8 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         initChart();
         initButtons();
 
-        this.roaster = new ESP32Roaster();
+        this.roaster = new ESP32BluetoothRoaster(ESP32BluetoothRoaster.DEFAULT_ESP32_BT_ADDRESS);
+        ((ESP32BluetoothRoaster)this.roaster).subcribe(this); // TODO: hacky hack.
         this.roaster.subscribe(this);
     }
 
@@ -154,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
     }
 
     @Override
-    public void handleEvent(CoffeeRoasterEvent event) {
+    public void onRoasterEvent(CoffeeRoasterEvent event) {
         Log.d("MainActivity", String.format("Received event: %f [C]", event.getBeanTemperatureCelsius()));
         float t = event.getBeanTemperatureCelsius();
         float d = event.getDutyCycle();
@@ -195,6 +199,19 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
             this.roaster.disconnect();
             this.dutyCycle.setEnabled(false);
             this.tglTimer.setEnabled(false);
+        }
+    }
+
+    @Override
+    public void onConnectionStateChanged(ConnectionEvent event) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        switch (event.getConnectionStatus()) {
+            case ConnectionEvent.STATE_CONNECTED:
+                handler.post(() -> switchConnected.setChecked(true));
+                break;
+            case ConnectionEvent.STATE_DISCONNECTED:
+                handler.post(() -> switchConnected.setChecked(false));
+                break;
         }
     }
 }

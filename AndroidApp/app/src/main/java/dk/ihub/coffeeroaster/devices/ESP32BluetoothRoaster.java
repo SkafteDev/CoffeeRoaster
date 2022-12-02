@@ -2,40 +2,58 @@ package dk.ihub.coffeeroaster.devices;
 
 import dk.ihub.coffeeroaster.MyApp;
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
+import dk.ihub.coffeeroaster.events.ConnectionEvent;
+import dk.ihub.coffeeroaster.events.ICoffeeRoasterConnectionListener;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.*;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ESP32Roaster implements ICoffeeRoaster {
+public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
-    private static final String ESP32_BT_ADDRESS = "3C:61:05:16:C8:36";
-    private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // This is a well-known UUID for serial boards.
+    public static final String DEFAULT_ESP32_BT_ADDRESS = "3C:61:05:16:C8:36";
+    public static final String TAG = ESP32BluetoothRoaster.class.getName();
+
+    private int connectionState;
 
     private final BluetoothManager btManager;
     private final BluetoothAdapter btAdapter;
-    private BluetoothDevice btDevice;
     private BluetoothGatt btGatt;
+    private BluetoothGattService coffeeRoasterService;
+    private static final UUID COFFEE_ROASTER_SERVICE_UUID = UUID.fromString("91BAD492-B950-4226-AA2B-4EDE9FA42F59");
+    private BluetoothGattCharacteristic beanTemperatureCharacteristic;
+    private static final UUID BEAN_TEMPERATURE_CHARACTERISTIC_UUID = UUID.fromString("CBA1D466-344C-4BE3-AB3F-189F80DD7518");
+    private BluetoothGattCharacteristic dutyCycleCharacteristic;
+    private static final UUID DUTY_CYCLE_CHARACTERISTIC_UUID = UUID.fromString("CA73B3BA-39F6-4AB3-91AE-186DC9577D99");
+    private final String esp32BtDeviceAddress;
+
 
     private float dutyCycle;
     private float temperatureC;
     private Thread pollingThread;
 
-    private List<ICoffeeRoasterEventListener> listeners;
+    private List<ICoffeeRoasterEventListener> eventListeners;
+    private List<ICoffeeRoasterConnectionListener> connectionListeners;
 
     @SuppressLint("MissingPermission")
-    public ESP32Roaster() {
+    public ESP32BluetoothRoaster(String esp32BtDeviceAddress) {
+        if (esp32BtDeviceAddress == null)
+            throw new IllegalArgumentException("esp32BtDeviceAddress must not be null.");
+
+        this.esp32BtDeviceAddress = esp32BtDeviceAddress;
         this.btManager = MyApp.getAppContext().getSystemService(BluetoothManager.class);
         this.btAdapter = btManager.getAdapter();
+        if (btAdapter == null)
+            throw new RuntimeException("Could not access Bluetooth adapter. Check permissions.");
     }
 
     private Thread createPollingThread() {
@@ -48,9 +66,7 @@ public class ESP32Roaster implements ICoffeeRoaster {
                     this.temperatureC = getBeanTemperatureCelsius();
                     this.dutyCycle = getDutyCycle();
 
-                    CoffeeRoasterEvent event = new CoffeeRoasterEvent();
-                    event.setDutyCycle(this.dutyCycle);
-                    event.setBeanTemperatureCelsius(this.temperatureC);
+                    CoffeeRoasterEvent event = new CoffeeRoasterEvent(temperatureC, dutyCycle);
 
                     notifyListeners(event);
 
@@ -71,111 +87,173 @@ public class ESP32Roaster implements ICoffeeRoaster {
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     // successfully connected to the GATT Server
+                    connectionState = BluetoothProfile.STATE_CONNECTED;
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     // disconnected from the GATT Server
+                    connectionState = BluetoothProfile.STATE_DISCONNECTED;
+                }
+                notifyListeners(new ConnectionEvent(newState));
+            }
+
+            @Override
+            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    for (BluetoothGattService service : gatt.getServices()) {
+                        Log.d(TAG, "Service: " + service.getUuid().toString());
+                        for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+                            Log.d(TAG, "\tCharacteristic: " + characteristic.getUuid());
+                        }
+                    }
+
+                    coffeeRoasterService = btGatt.getService(COFFEE_ROASTER_SERVICE_UUID);
+                    if (coffeeRoasterService == null) {
+                        String errMsg = String.format("Coffee roaster BLE Service not found. UUID: %s", COFFEE_ROASTER_SERVICE_UUID);
+                        throw new RuntimeException(errMsg);
+                    }
+
+                    beanTemperatureCharacteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
+                    if (beanTemperatureCharacteristic != null) {
+                        if (btGatt.setCharacteristicNotification(beanTemperatureCharacteristic, true)) {
+                            Log.d(TAG, "Bean temperature notification activated.");
+                        }
+                    } else {
+                        Log.e(TAG, "Bean temperature characteristic was not found.");
+                    }
+                } else {
+                    Log.e(TAG, "onServicesDiscovered received: " + status);
+                }
+
+            }
+
+            @Override
+            public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                Log.d(TAG, "Characteristic changed: " + characteristic.getUuid());
+                if (BEAN_TEMPERATURE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
+                    temperatureC = getBeanTemperatureCelsius();
+
+                    notifyListeners(new CoffeeRoasterEvent(temperatureC, dutyCycle));
                 }
             }
         };
 
-        btDevice = btAdapter.getRemoteDevice(ESP32_BT_ADDRESS);
-
-        if (btDevice != null) {
-            btGatt = btDevice.connectGatt(MyApp.getAppContext(), true, bluetoothGattCallback);
-        }
-
-
-
-        return btSocket.isConnected();
-    }
-
-    @Override
-    public boolean disconnect() {
         try {
-            btSocket.close();
-            pollingThread.interrupt();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            final BluetoothDevice btDevice = btAdapter.getRemoteDevice(esp32BtDeviceAddress);
+            if (btDevice != null) {
+                btGatt = btDevice.connectGatt(MyApp.getAppContext(), true, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE);
+                // Discover services must be called on the UI threat,
+                // and a short delay must be used after connecting to the gatt.
+                // Otherwise, the callback onServicesDiscovered() is never called.
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    boolean result = btGatt.discoverServices();
+                    Log.d(TAG, "Discover Services started: " + result);
+                }, 1000);
 
-        return btSocket.isConnected();
-    }
-
-    @Override
-    public float getBeanTemperatureCelsius() {
-        if (!btSocket.isConnected()) {
-            return 0;
-        }
-        String cmd = "R001temperature";
-        try {
-            outputStream.write(cmd.getBytes(StandardCharsets.UTF_8));
-            outputStream.flush();
-
-            byte[] buffer = new byte[256];
-            inputStream.read(buffer);
-
-            String response = new String(buffer);
-            this.temperatureC = Float.parseFloat(response);
-            return temperatureC;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    @Override
-    public float getDutyCycle() {
-        if (!btSocket.isConnected()) {
-            return 0;
-        }
-
-        return this.dutyCycle;
-    }
-
-    @Override
-    public void subscribe(ICoffeeRoasterEventListener listener) {
-        if (this.listeners == null) {
-            this.listeners = new ArrayList<>();
-        }
-
-        this.listeners.add(listener);
-    }
-
-    @Override
-    public boolean setDutyCycle(float value) {
-        if (!btSocket.isConnected()) {
+                return true;
+            }
+        } catch (IllegalArgumentException ex) {
+            String errorMsg = String.format("Device not found with provided address '%s'.  Unable to connect.", esp32BtDeviceAddress);
+            Log.e(TAG, errorMsg);
+            return false;
+        } catch (RuntimeException ex) {
+            Log.e(TAG, ex.getMessage());
             return false;
         }
 
-        String cmd = "W002dutycycle" + value;
+        return false;
+    }
 
-        try {
-            outputStream.write(cmd.getBytes(StandardCharsets.UTF_8));
-            outputStream.flush();
+    @Override
+    @SuppressLint("MissingPermission")
+    public void disconnect() {
+        if (btGatt == null) return;
+        btGatt.disconnect();
+        btGatt.close();
+    }
 
-            byte[] buffer = new byte[256];
-            inputStream.read(buffer);
+    @Override
+    @SuppressLint("MissingPermission")
+    public float getBeanTemperatureCelsius() {
+        if (btGatt == null) return 0;
 
-            String response = new String(buffer);
-            this.dutyCycle = Float.parseFloat(response);
+        BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
+        if (btGatt.readCharacteristic(characteristic)) {
+            return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+        }
+
+        return -1;
+    }
+
+    @Override
+    @SuppressLint("MissingPermission")
+    public float getDutyCycle() {
+        if (btGatt == null) return -1;
+
+        BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(DUTY_CYCLE_CHARACTERISTIC_UUID);
+        if (btGatt.readCharacteristic(characteristic)) {
+            return Float.parseFloat(characteristic.getStringValue(0));
+        }
+
+        return -1;
+    }
+
+    @Override
+    @SuppressLint("MissingPermission")
+    public void subscribe(ICoffeeRoasterEventListener listener) {
+        if (eventListeners == null) {
+            eventListeners = new ArrayList<>();
+        }
+
+        eventListeners.add(listener);
+    }
+
+    public void subcribe(ICoffeeRoasterConnectionListener listener) {
+        if (connectionListeners == null) {
+            connectionListeners = new ArrayList<>();
+        }
+
+        connectionListeners.add(listener);
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public boolean setDutyCycle(float value) {
+        if (btGatt == null) return false;
+        if (! (0 <= value && value <= 100)) { // Minimum and maximum duty cycle allowed is [0, 100].
+            return false;
+        }
+
+        BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(DUTY_CYCLE_CHARACTERISTIC_UUID);
+        characteristic.setValue(String.valueOf((int)value));
+        if (btGatt.writeCharacteristic(characteristic)) {
+            dutyCycle = (int)value;
+            Log.d(TAG, "setDutyCycle(float value): Updated duty cycle to " + dutyCycle);
             return true;
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return false;
     }
 
     private void notifyListeners(CoffeeRoasterEvent event) {
+        if (this.eventListeners == null) return;
+
         try {
-            for (ICoffeeRoasterEventListener l : this.listeners) {
-                l.handleEvent(event);
+            for (ICoffeeRoasterEventListener l : this.eventListeners) {
+                l.onRoasterEvent(event);
             }
         } catch (Error e) {
-            Log.e("RoasterStub", e.getMessage());
+            Log.e(TAG, e.getMessage());
         }
+    }
 
+    private void notifyListeners(ConnectionEvent event) {
+        if (this.connectionListeners == null) return;
+
+        try {
+            for (ICoffeeRoasterConnectionListener l : this.connectionListeners) {
+                l.onConnectionStateChanged(event);
+            }
+        } catch (Error e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 }

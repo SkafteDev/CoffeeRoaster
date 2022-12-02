@@ -13,9 +13,8 @@ public interface ICoffeeRoaster {
 
     /**
      * Disconnects to the coffee roaster.
-     * @return Returns true if successfully disconnected. Otherwise false.
      */
-    boolean disconnect();
+    void disconnect();
 
 
 

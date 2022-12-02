@@ -35,10 +35,7 @@ public class RoasterEmulator implements ICoffeeRoaster {
                     this.uptime = (System.currentTimeMillis() - systemBootTime) / 1000;
                     this.temperature = 196.82 / (1+ 6.54 * Math.exp(-0.04*uptime*(dutyCycle/100)));
 
-                    CoffeeRoasterEvent event = new CoffeeRoasterEvent();
-                    event.setDutyCycle(this.dutyCycle);
-                    event.setBeanTemperatureCelsius((float)temperature);
-
+                    CoffeeRoasterEvent event = new CoffeeRoasterEvent((float)temperature, dutyCycle);
                     notifySubscribers(event);
 
                     Thread.sleep(1000);
@@ -53,9 +50,8 @@ public class RoasterEmulator implements ICoffeeRoaster {
     }
 
     @Override
-    public boolean disconnect() {
+    public void disconnect() {
         this.esp32.interrupt();
-        return true;
     }
 
     @Override
@@ -86,7 +82,7 @@ public class RoasterEmulator implements ICoffeeRoaster {
     private void notifySubscribers(CoffeeRoasterEvent event) {
         try {
             for (ICoffeeRoasterEventListener l : this.subscribers) {
-                l.handleEvent(event);
+                l.onRoasterEvent(event);
             }
         } catch (Error e) {
             Log.e("RoasterStub", e.getMessage());
