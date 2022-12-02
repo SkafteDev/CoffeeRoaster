@@ -18,11 +18,13 @@ import java.util.UUID;
 
 public class ESP32Roaster implements ICoffeeRoaster {
 
-    private BluetoothSocket btSocket;
-    private InputStream inputStream;
-    private OutputStream outputStream;
     private static final String ESP32_BT_ADDRESS = "3C:61:05:16:C8:36";
     private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // This is a well-known UUID for serial boards.
+
+    private final BluetoothManager btManager;
+    private final BluetoothAdapter btAdapter;
+    private BluetoothDevice btDevice;
+    private BluetoothGatt btGatt;
 
     private float dutyCycle;
     private float temperatureC;
@@ -32,14 +34,8 @@ public class ESP32Roaster implements ICoffeeRoaster {
 
     @SuppressLint("MissingPermission")
     public ESP32Roaster() {
-        BluetoothManager btManager = MyApp.getAppContext().getSystemService(BluetoothManager.class);
-        BluetoothAdapter btAdapter = btManager.getAdapter();
-        BluetoothDevice btDevice = btAdapter.getRemoteDevice(ESP32_BT_ADDRESS);
-        try {
-            btSocket = btDevice.createInsecureRfcommSocketToServiceRecord(uuid);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.btManager = MyApp.getAppContext().getSystemService(BluetoothManager.class);
+        this.btAdapter = btManager.getAdapter();
     }
 
     private Thread createPollingThread() {
@@ -70,20 +66,26 @@ public class ESP32Roaster implements ICoffeeRoaster {
     @Override
     @SuppressLint("MissingPermission")
     public boolean connect() {
-        if (btSocket.isConnected()) {
-            return true;
-        } else {
-            try {
-                btSocket.connect();
-                inputStream = btSocket.getInputStream();
-                outputStream = btSocket.getOutputStream();
-                pollingThread = createPollingThread();
-                pollingThread.start();
-            } catch (IOException e) {
-                e.printStackTrace();
+        final BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
+            @Override
+            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    // successfully connected to the GATT Server
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    // disconnected from the GATT Server
+                }
             }
-            return btSocket.isConnected();
+        };
+
+        btDevice = btAdapter.getRemoteDevice(ESP32_BT_ADDRESS);
+
+        if (btDevice != null) {
+            btGatt = btDevice.connectGatt(MyApp.getAppContext(), true, bluetoothGattCallback);
         }
+
+
+
+        return btSocket.isConnected();
     }
 
     @Override

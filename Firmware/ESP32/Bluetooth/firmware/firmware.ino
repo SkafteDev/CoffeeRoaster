@@ -36,17 +36,19 @@ TaskHandle_t bleTask_t;
 //BLE server name
 #define bleServerName "COFFEE_ROASTER_ESP32"
 // BLE SERVICE UUID
-#define SERVICE_UUID "91bad492-b950-4226-aa2b-4ede9fa42f59"
-BLECharacteristic temperatureCelsiusCharacteristics("cba1d466-344c-4be3-ab3f-189f80dd7518", BLECharacteristic::PROPERTY_NOTIFY);
+#define SERVICE_UUID "91BAD492-B950-4226-AA2B-4EDE9FA42F59"
+BLECharacteristic temperatureCelsiusCharacteristics("CBA1D466-344C-4BE3-AB3F-189F80DD7518",
+                                             BLECharacteristic::PROPERTY_NOTIFY|
+                                             BLECharacteristic::PROPERTY_READ);
 BLEDescriptor temperatureCelsiusDescriptor(BLEUUID((uint16_t)0x2902));
 
-BLECharacteristic dutyCycleCharacteristics("ca73b3ba-39f6-4ab3-91ae-186dc9577d99",
+BLECharacteristic dutyCycleCharacteristics("CA73B3BA-39F6-4AB3-91AE-186DC9577D99",
                                               BLECharacteristic::PROPERTY_NOTIFY|
                                               BLECharacteristic::PROPERTY_WRITE|
                                               BLECharacteristic::PROPERTY_READ);
 BLEDescriptor dutyCycleDescriptor(BLEUUID((uint16_t)0x2903));
 
-BLECharacteristic samplingRateCharacteristics("1c41972d-68a9-48b3-8534-c52809e34b19",
+BLECharacteristic samplingRateCharacteristics("1C41972D-68A9-48B3-8534-C52809E34B19",
                                               BLECharacteristic::PROPERTY_WRITE|
                                               BLECharacteristic::PROPERTY_READ);
 BLEDescriptor samplingRateDescriptor(BLEUUID((uint16_t)0x2904));
