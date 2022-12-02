@@ -39,7 +39,6 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
     private float dutyCycle;
     private float temperatureC;
-    private Thread pollingThread;
 
     private List<ICoffeeRoasterEventListener> eventListeners;
     private List<ICoffeeRoasterConnectionListener> connectionListeners;
@@ -54,29 +53,6 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
         this.btAdapter = btManager.getAdapter();
         if (btAdapter == null)
             throw new RuntimeException("Could not access Bluetooth adapter. Check permissions.");
-    }
-
-    private Thread createPollingThread() {
-        return new Thread(() ->
-        {
-            this.dutyCycle = 0; // Default value.
-
-            while (true) {
-                try {
-                    this.temperatureC = getBeanTemperatureCelsius();
-                    this.dutyCycle = getDutyCycle();
-
-                    CoffeeRoasterEvent event = new CoffeeRoasterEvent(temperatureC, dutyCycle);
-
-                    notifyListeners(event);
-
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Log.e("ESP32Roaster", "Polling thread interrupted");
-                    break;
-                }
-            }
-        });
     }
 
     @Override
