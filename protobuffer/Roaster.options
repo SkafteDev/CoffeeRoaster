@@ -1,4 +1,0 @@
-SensorRequest.sensor_id max_size:16
-SensorResponse.sensor_id max_size:16
-ActuatorRequest.actuator_id max_size:16
-ActuatorResponse.actuator_id max_size:16
