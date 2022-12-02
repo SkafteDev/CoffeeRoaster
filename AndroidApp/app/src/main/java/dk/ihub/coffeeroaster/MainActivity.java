@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
 
         // Create temperature dataset
         LineDataSet temperatureSet = new LineDataSet(null, "Temperature [C]");
-        temperatureSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        temperatureSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
         temperatureSet.setColor(Color.RED);
         temperatureSet.setDrawCircles(false);
         temperatureSet.setLineWidth(2f);
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
 
         // Create duty cyle dataset
         LineDataSet dutyCycleSet = new LineDataSet(null, "Duty cycle [%]");
-        dutyCycleSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        dutyCycleSet.setAxisDependency(YAxis.AxisDependency.LEFT);
         dutyCycleSet.setColor(Color.BLUE);
         dutyCycleSet.setDrawCircles(false);
         dutyCycleSet.setLineWidth(2f);
