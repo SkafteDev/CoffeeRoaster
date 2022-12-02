@@ -206,7 +206,7 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
         eventListeners.add(listener);
     }
 
-    public void subcribe(ICoffeeRoasterConnectionListener listener) {
+    public void addConnectionListener(ICoffeeRoasterConnectionListener listener) {
         if (connectionListeners == null) {
             connectionListeners = new ArrayList<>();
         }

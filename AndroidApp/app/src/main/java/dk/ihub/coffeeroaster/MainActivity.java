@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         initButtons();
 
         this.roaster = new ESP32BluetoothRoaster(ESP32BluetoothRoaster.DEFAULT_ESP32_BT_ADDRESS);
-        ((ESP32BluetoothRoaster)this.roaster).subcribe(this); // TODO: hacky hack.
+        this.roaster.addConnectionListener(this);
         this.roaster.subscribe(this);
     }
 

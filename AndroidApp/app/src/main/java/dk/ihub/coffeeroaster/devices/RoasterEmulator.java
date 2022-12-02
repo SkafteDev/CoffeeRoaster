@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
+import dk.ihub.coffeeroaster.events.ICoffeeRoasterConnectionListener;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
 
 public class RoasterEmulator implements ICoffeeRoaster {
@@ -70,6 +71,11 @@ public class RoasterEmulator implements ICoffeeRoaster {
             this.subscribers = new ArrayList<>();
         }
         this.subscribers.add(listener);
+    }
+
+    @Override
+    public void addConnectionListener(ICoffeeRoasterConnectionListener listener) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override

@@ -1,5 +1,6 @@
 package dk.ihub.coffeeroaster.devices;
 
+import dk.ihub.coffeeroaster.events.ICoffeeRoasterConnectionListener;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
 
 public interface ICoffeeRoaster {
@@ -34,7 +35,7 @@ public interface ICoffeeRoaster {
 
     void subscribe(ICoffeeRoasterEventListener listener);
 
-
+    void addConnectionListener (ICoffeeRoasterConnectionListener listener);
 
 
     // Control operations
