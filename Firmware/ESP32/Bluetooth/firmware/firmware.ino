@@ -53,11 +53,13 @@ bool deviceConnected = false;
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
     deviceConnected = true;
-    Serial.println("BLE client connected.");
+    Serial.println("MyServerCallbacks::onConnect(): BLE client connected.");
   };
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
-    Serial.println("BLE client disconnected.");
+    Serial.println("MyServerCallbacks::onDisconnect(): BLE client disconnected.");
+    _dutyCycle = 0;
+    Serial.println("MyServerCallbacks::onDisconnect(): Turned off heater.");
     pServer->getAdvertising()->start();
     Serial.println("MyServerCallbacks::onDisconnect(): Waiting for a client connection to notify...");
   }
@@ -155,7 +157,8 @@ void bleHandler(void * pvParameters) {
       }
   
       Serial.print("bleHandler(): ");
-      Serial.print("Notified (temperature, " + String(currentTemp) + "), (dutyCycle, " + String(_dutyCycle) + ")");
+      Serial.print("Notified (temperature, " + String(currentTemp) 
+                       + "), (dutyCycle, " + String(_dutyCycle) + ")");
       Serial.println();
     }
 
