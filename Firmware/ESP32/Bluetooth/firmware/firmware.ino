@@ -46,6 +46,11 @@ BLECharacteristic dutyCycleCharacteristics("ca73b3ba-39f6-4ab3-91ae-186dc9577d99
                                               BLECharacteristic::PROPERTY_READ);
 BLEDescriptor dutyCycleDescriptor(BLEUUID((uint16_t)0x2903));
 
+BLECharacteristic samplingRateCharacteristics("1c41972d-68a9-48b3-8534-c52809e34b19",
+                                              BLECharacteristic::PROPERTY_WRITE|
+                                              BLECharacteristic::PROPERTY_READ);
+BLEDescriptor samplingRateDescriptor(BLEUUID((uint16_t)0x2904));
+
 BLEServer *pServer;
 bool deviceConnected = false;
 
@@ -113,6 +118,11 @@ void setupBLE() {
   bleService->addCharacteristic(&dutyCycleCharacteristics);
   dutyCycleDescriptor.setValue("Duty cycle");
   dutyCycleCharacteristics.addDescriptor(&dutyCycleDescriptor);
+
+  // Sampling rate
+  bleService->addCharacteristic(&samplingRateCharacteristics);
+  samplingRateDescriptor.setValue("Sampling rate");
+  samplingRateCharacteristics.addDescriptor(&samplingRateDescriptor);
   
   // Start the service
   bleService->start();
@@ -142,18 +152,34 @@ void readTemp(void * pvParameters) {
 
 void bleHandler(void * pvParameters) {
   setupBLE();
+  int delayMs = 1000; // Default delay
 
   while(true) {
     if (deviceConnected) {
+      /*
+       * Temperature
+       */
       int currentTemp = _currentTemp; // Only ints allowed.
       temperatureCelsiusCharacteristics.setValue(currentTemp);
       temperatureCelsiusCharacteristics.notify();
-    
+
+      /*
+       * Duty cycle
+       */
       std::string newDutyCycleValStr = dutyCycleCharacteristics.getValue();
       int newDutyCycleVal = atoi(newDutyCycleValStr.c_str());
       if (0 <= newDutyCycleVal && newDutyCycleVal <= 100) { // Duty cycle must be between [0, 100].
         _dutyCycle = newDutyCycleVal;
         dutyCycleCharacteristics.notify();
+      }
+
+      /*
+       * Sampling rate
+       */
+      std::string newSamplingRateStr = samplingRateCharacteristics.getValue();
+      int newSamplingRate = atoi(newSamplingRateStr.c_str());
+      if (newSamplingRate > 0) {
+        delayMs = 1000 / newSamplingRate;
       }
   
       Serial.print("bleHandler(): ");
@@ -162,7 +188,7 @@ void bleHandler(void * pvParameters) {
       Serial.println();
     }
 
-    delay(1000);
+    delay(delayMs);
   }
 }
 
@@ -177,8 +203,4 @@ void loop() {
   delay(delayMs); // Sleep for the fraction of the second while the heater is in ON state.
   digitalWrite(relayPin, LOW); // Turn off heater
   delay(1000 - (delayMs)); // Sleep for the fraction of the second while the heater is in the OFF state.
-
-  float systemUptime = (millis() - bootTime) / 1000;
-  int minutes = int(systemUptime / 60);
-  int seconds = int(systemUptime) % 60;
 }
