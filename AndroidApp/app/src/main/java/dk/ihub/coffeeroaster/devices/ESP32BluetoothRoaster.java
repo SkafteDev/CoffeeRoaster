@@ -89,6 +89,9 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
                     beanTemperatureCharacteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
                     if (beanTemperatureCharacteristic != null) {
+                        // TODO: Notifications are not enabled by default on the BLE server.
+                        // This means that the app does not receive data, unless this setting is explicitly set on the server.
+                        // This can e.g. be enabled in the BLE Scanner app by ticking 'N'.
                         if (btGatt.setCharacteristicNotification(beanTemperatureCharacteristic, true)) {
                             Log.d(TAG, "Bean temperature notification activated.");
                         }

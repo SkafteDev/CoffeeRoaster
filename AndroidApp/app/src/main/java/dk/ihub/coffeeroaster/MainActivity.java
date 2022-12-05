@@ -24,6 +24,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import dk.ihub.coffeeroaster.devices.ESP32BluetoothRoaster;
+import dk.ihub.coffeeroaster.devices.RoasterEmulator;
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
 import dk.ihub.coffeeroaster.devices.ICoffeeRoaster;
 import dk.ihub.coffeeroaster.events.ConnectionEvent;
@@ -72,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         this.btnClear = findViewById(R.id.btnClear);
         this.btnClear.setOnClickListener((listener) -> {
             if (lineChart.getData() != null) {
+                // TODO: BUG multiple event listeners are added when the data are cleared.
+                // Make sure that the old event listeners are removed when clearing data.
                 lineChart.clear();
                 initChart();
             }
@@ -96,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         lineChart.setPinchZoom(true);
 
         // set an alternative background color
-        lineChart.setBackgroundColor(Color.LTGRAY);
+        lineChart.setBackgroundColor(Color.DKGRAY);
 
         // Init x-axis as time
         XAxis xAxis = lineChart.getXAxis();
@@ -115,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
 
         // Init right y-axis
         YAxis leftAxis = lineChart.getAxisLeft();
-        leftAxis.setTextColor(Color.BLUE);
+        leftAxis.setTextColor(Color.WHITE);
         leftAxis.setAxisMaximum(100);
         leftAxis.setAxisMinimum(0);
         leftAxis.setDrawGridLines(false);
@@ -150,11 +153,11 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
         // Create duty cyle dataset
         LineDataSet dutyCycleSet = new LineDataSet(null, "Duty cycle [%]");
         dutyCycleSet.setAxisDependency(YAxis.AxisDependency.LEFT);
-        dutyCycleSet.setColor(Color.BLUE);
+        dutyCycleSet.setColor(Color.WHITE);
         dutyCycleSet.setDrawCircles(false);
         dutyCycleSet.setLineWidth(2f);
         dutyCycleSet.setFillAlpha(65);
-        dutyCycleSet.setFillColor(Color.BLUE);
+        dutyCycleSet.setFillColor(Color.WHITE);
         dutyCycleSet.setHighLightColor(Color.rgb(244, 117, 117));
         dutyCycleSet.setValueTextColor(Color.WHITE);
         dutyCycleSet.setValueTextSize(9f);

@@ -75,7 +75,7 @@ public class RoasterEmulator implements ICoffeeRoaster {
 
     @Override
     public void addConnectionListener(ICoffeeRoasterConnectionListener listener) {
-        throw new UnsupportedOperationException("Not implemented");
+        // Not implemented...
     }
 
     @Override
