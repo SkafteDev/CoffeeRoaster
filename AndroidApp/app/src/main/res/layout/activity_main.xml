@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity">
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/lineChart"
@@ -113,6 +113,15 @@
         app:layout_constraintTop_toTopOf="@+id/lblTemperature" />
 
     <TextView
+        android:id="@+id/lblTimerVal"
+        android:layout_width="83dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="52dp"
+        android:text="0"
+        app:layout_constraintStart_toEndOf="@+id/lblTimer"
+        app:layout_constraintTop_toTopOf="@+id/lblTimer" />
+
+    <TextView
         android:id="@+id/lblTemperature"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -120,5 +129,14 @@
         android:text="Temperature:"
         app:layout_constraintStart_toStartOf="@+id/lblDutyCycle"
         app:layout_constraintTop_toBottomOf="@+id/lblDutyCycle" />
+
+    <TextView
+        android:id="@+id/lblTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Timer:"
+        app:layout_constraintStart_toStartOf="@+id/lblTemperature"
+        app:layout_constraintTop_toBottomOf="@+id/lblTemperature" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

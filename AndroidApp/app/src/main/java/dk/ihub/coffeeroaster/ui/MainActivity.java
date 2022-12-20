@@ -1,4 +1,4 @@
-package dk.ihub.coffeeroaster;
+package dk.ihub.coffeeroaster.ui;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -23,15 +23,18 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.time.Duration;
+
+import dk.ihub.coffeeroaster.R;
 import dk.ihub.coffeeroaster.devices.ESP32BluetoothRoaster;
-import dk.ihub.coffeeroaster.devices.RoasterEmulator;
 import dk.ihub.coffeeroaster.events.CoffeeRoasterEvent;
 import dk.ihub.coffeeroaster.devices.ICoffeeRoaster;
 import dk.ihub.coffeeroaster.events.ConnectionEvent;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterConnectionListener;
 import dk.ihub.coffeeroaster.events.ICoffeeRoasterEventListener;
+import dk.ihub.coffeeroaster.utils.Timer;
 
-public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEventListener, ICoffeeRoasterConnectionListener, SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEventListener, ICoffeeRoasterConnectionListener, SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener, Timer.OnTickListener {
 
     private LineChart lineChart;
     private SeekBar dutyCycle;
@@ -39,7 +42,9 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
     private ToggleButton tglTimer;
     private TextView lblDutyCycleVal;
     private TextView lblTemperatureVal;
+    private TextView lblTimerVal;
     private Button btnClear;
+    private Timer timer;
     private ICoffeeRoaster roaster;
 
     @Override
@@ -49,6 +54,10 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
 
         initChart();
         initButtons();
+
+        timer = new Timer();
+        timer.setOnTickListener(this);
+        lblTimerVal.setText("00:00:00");
 
         this.roaster = new ESP32BluetoothRoaster(ESP32BluetoothRoaster.DEFAULT_ESP32_BT_ADDRESS);
         this.roaster.addConnectionListener(this);
@@ -65,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
 
         this.lblDutyCycleVal = findViewById(R.id.lblDutyCycleVal);
         this.lblTemperatureVal = findViewById(R.id.lblTemperatureVal);
+        this.lblTimerVal = findViewById(R.id.lblTimerVal);
 
         this.tglTimer = findViewById(R.id.tglTimer);
         this.tglTimer.setEnabled(false);
@@ -78,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
                 lineChart.clear();
                 initChart();
             }
+            timer.restart();
+            lblTimerVal.setText("00:00:00");
         });
     }
 
@@ -226,5 +238,11 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
                 handler.post(() -> switchConnected.setChecked(false));
                 break;
         }
+    }
+
+    @Override
+    public void onTick(Duration d) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> lblTimerVal.setText(String.format("%02d:%02d:%02d", d.toHoursPart(), d.toMinutesPart(), d.toSecondsPart())));
     }
 }
