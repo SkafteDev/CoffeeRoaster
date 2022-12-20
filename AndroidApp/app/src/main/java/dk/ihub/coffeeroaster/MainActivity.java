@@ -191,15 +191,15 @@ public class MainActivity extends AppCompatActivity implements ICoffeeRoasterEve
     }
 
     @Override
-    public void onProgressChanged(SeekBar seekBar, int dutyCycle, boolean b) {
-        this.roaster.setDutyCycle(dutyCycle);
-    }
+    public void onProgressChanged(SeekBar seekBar, int dutyCycle, boolean fromUser) { }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {    }
 
     @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {    }
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        this.roaster.setDutyCycle(seekBar.getProgress());
+    }
 
     @Override
     public void onCheckedChanged(CompoundButton compoundButton, boolean shouldConnect) {
