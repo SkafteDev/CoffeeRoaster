@@ -15,6 +15,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -106,9 +107,18 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
             public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                 Log.d(TAG, "Characteristic changed: " + characteristic.getUuid());
                 if (BEAN_TEMPERATURE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
-                    temperatureC = getBeanTemperatureCelsius();
+                    temperatureC = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    dutyCycle = getDutyCycle();
 
                     notifyListeners(new CoffeeRoasterEvent(temperatureC, dutyCycle));
+                }
+            }
+
+            @Override
+            public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                if (DUTY_CYCLE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
+                    Log.d(TAG, "onCharacteristicRead: Duty cycle.");
+                    dutyCycle = Float.parseFloat(characteristic.getStringValue(0));
                 }
             }
         };
@@ -174,9 +184,11 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
         BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
         if (btGatt.readCharacteristic(characteristic)) {
+            Log.d(TAG, "getBeanTemperatureCelsius: Read value");
             return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         }
 
+        Log.d(TAG, "getBeanTemperatureCelsius: Returned latest value.");
         return temperatureC; // return latest received value if characteristic read fails.
     }
 
@@ -187,9 +199,11 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
         BluetoothGattCharacteristic characteristic = coffeeRoasterService.getCharacteristic(DUTY_CYCLE_CHARACTERISTIC_UUID);
         if (btGatt.readCharacteristic(characteristic)) {
-            return Float.parseFloat(characteristic.getStringValue(0));
+            Log.d(TAG, "getDutyCycle: Read value");
+            return dutyCycle;
         }
 
+        Log.d(TAG, "getDutyCycle: Returned latest value");
         return dutyCycle; // return latest received value if characteristic read fails.
     }
 
