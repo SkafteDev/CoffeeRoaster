@@ -118,7 +118,11 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
             public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                 if (DUTY_CYCLE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
                     Log.d(TAG, "onCharacteristicRead: Duty cycle.");
-                    dutyCycle = Float.parseFloat(characteristic.getStringValue(0));
+                    try {
+                        dutyCycle = Float.parseFloat(characteristic.getStringValue(0));
+                    } catch (NumberFormatException ex) {
+                        Log.w(TAG, "onCharacteristicRead: Cannot parse empty string to Duty Cycle value");
+                    }
                 }
             }
         };

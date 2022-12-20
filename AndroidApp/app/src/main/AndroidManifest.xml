@@ -5,6 +5,10 @@
     <!-- Needed to communicate with already-paired Bluetooth devices. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- Needed to export the roast profiles to local storage -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+
 
     <application
         android:name="dk.ihub.coffeeroaster.MyApp"

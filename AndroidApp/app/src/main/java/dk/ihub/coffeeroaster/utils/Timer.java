@@ -12,13 +12,15 @@ public class Timer {
     private List<OnTickListener> onTickListeners;
 
     public Timer() {
+        this.duration = Duration.ofSeconds(0);
+
         timer = () -> {
             long startTime = System.currentTimeMillis();
             while (true) {
                 try {
                     long elapsed = System.currentTimeMillis() - startTime;
-                    duration = Duration.ofMillis(elapsed);
-                    notifyOnTickListeners(duration);
+                    this.duration = Duration.ofMillis(elapsed);
+                    notifyOnTickListeners(this.duration);
 
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -47,7 +49,7 @@ public class Timer {
     }
 
     public Duration getDuration() {
-        return duration;
+        return this.duration;
     }
 
     private void notifyOnTickListeners(Duration duration) {
