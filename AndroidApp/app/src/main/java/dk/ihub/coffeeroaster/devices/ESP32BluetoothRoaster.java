@@ -89,10 +89,8 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
 
                     beanTemperatureCharacteristic = coffeeRoasterService.getCharacteristic(BEAN_TEMPERATURE_CHARACTERISTIC_UUID);
                     if (beanTemperatureCharacteristic != null) {
-                        // TODO: Notifications are not enabled by default on the BLE server.
-                        // This means that the app does not receive data, unless this setting is explicitly set on the server.
-                        // This can e.g. be enabled in the BLE Scanner app by ticking 'N'.
-                        if (btGatt.setCharacteristicNotification(beanTemperatureCharacteristic, true)) {
+                        UUID descriptorUUID = beanTemperatureCharacteristic.getDescriptors().get(0).getUuid();
+                        if (setCharacteristicNotification(btGatt, beanTemperatureCharacteristic, descriptorUUID, true)) {
                             Log.d(TAG, "Bean temperature notification activated.");
                         }
                     } else {
@@ -139,6 +137,26 @@ public class ESP32BluetoothRoaster implements ICoffeeRoaster {
         }
 
         return false;
+    }
+
+    /**
+     * Enables notification for characteristic over BLE.
+     * See: https://stackoverflow.com/questions/32184536/enabling-bluetooth-characteristic-notification-in-android-bluetooth-low-energy
+     * @param bluetoothGatt
+     * @param characteristic
+     * @param enable
+     * @return
+     */
+    @SuppressLint("MissingPermission")
+    private boolean setCharacteristicNotification(BluetoothGatt bluetoothGatt,
+                                                  BluetoothGattCharacteristic characteristic,
+                                                  UUID descriptorUUID,
+                                                  boolean enable) {
+        Log.d(TAG, String.format("setCharacteristicNotification(%s)", enable));
+        bluetoothGatt.setCharacteristicNotification(characteristic, enable);
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUUID);
+        descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[]{0x00, 0x00});
+        return bluetoothGatt.writeDescriptor(descriptor); //descriptor write operation successfully started?
     }
 
     @Override
