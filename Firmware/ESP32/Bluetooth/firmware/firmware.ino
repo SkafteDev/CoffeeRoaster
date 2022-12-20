@@ -46,12 +46,12 @@ BLECharacteristic dutyCycleCharacteristics("CA73B3BA-39F6-4AB3-91AE-186DC9577D99
                                               BLECharacteristic::PROPERTY_NOTIFY|
                                               BLECharacteristic::PROPERTY_WRITE|
                                               BLECharacteristic::PROPERTY_READ);
-BLEDescriptor dutyCycleDescriptor(BLEUUID((uint16_t)0x2903));
+BLEDescriptor dutyCycleDescriptor(BLEUUID((uint16_t)0x2902));
 
 BLECharacteristic samplingRateCharacteristics("1C41972D-68A9-48B3-8534-C52809E34B19",
                                               BLECharacteristic::PROPERTY_WRITE|
                                               BLECharacteristic::PROPERTY_READ);
-BLEDescriptor samplingRateDescriptor(BLEUUID((uint16_t)0x2904));
+BLEDescriptor samplingRateDescriptor(BLEUUID((uint16_t)0x2902));
 
 BLEServer *pServer;
 bool deviceConnected = false;
