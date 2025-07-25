@@ -5,6 +5,26 @@ CoffeeRoaster is an experimental setup for controlling a small coffee bean roast
 * **Firmware** – Arduino‑style source code for the ESP32 that drives the heater through a solid state relay and reports the bean temperature over Bluetooth or a serial link.
 * **AndroidApp** – A simple Android application used to connect to the roaster via BLE, adjust the duty cycle of the heater and plot the temperature profile.  A CSV exporter is included for saving roast data.
 
+## Demo setup
+Hardware list:
+- [ESP32 microcontroller](https://www.aliexpress.com/item/1005006456519790.html)
+- [MAX6675 + K Thermocouple](https://www.aliexpress.com/item/1005006222174410.html)
+- Solid State Relay, [SSR-40DA DC Control AC](https://www.aliexpress.com/item/4000269173201.html)
+- [1200W Popcorn machine](https://www.computersalg.dk/i/9572438/day-popcornmaskine-1200w)
+- Power supply Module. 220V to DC 24V [XK-2412-24](https://www.aliexpress.com/item/1005003107326198.html)
+- [LCD1602 I2C display](https://www.aliexpress.com/item/1005006100081942.html)
+- [Potentiometer for setpoint temperature](https://www.aliexpress.com/item/1005008570514925.html)
+
+Demo videos:  
+[Roasting-1.mp4](demo%2FRoasting-1.mp4)  
+[Roasting-2.mp4](demo%2FRoasting-2.mp4)  
+
+This image shows a primitive minimum viable hardware setup with an ESP32, a breadboard, an LCD, a thermocouple, a relay, and a potentiometer that controls the modified popcorn machine.  
+![hardware-setup-2.png](demo%2Fhardware-setup-2.png)
+
+This image shows an example of the inside of the roasting bed and the thermocouple.  
+![hardware-setup-3.png](demo%2Fhardware-setup-3.png)
+
 ## Repository structure
 
 ```
